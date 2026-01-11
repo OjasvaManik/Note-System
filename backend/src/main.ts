@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Server } from 'http';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.enableCors({
     origin: true,
@@ -11,14 +13,13 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 1. Start listening (don't capture the return value)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads',
+  });
+
   await app.listen(process.env.PORT ?? 8082);
 
-  // 2. Get the underlying HTTP server instance explicitly
-  // We cast to 'unknown' first, then 'Server' to satisfy the linter
   const server = app.getHttpServer() as unknown as Server;
-
-  // 3. Set the timeout
   server.setTimeout(0);
 }
 bootstrap();

@@ -4,6 +4,8 @@ import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 import { notes } from './db/schema';
 import { desc, eq, InferInsertModel } from 'drizzle-orm';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AppService {
@@ -16,10 +18,8 @@ export class AppService {
       .insert(notes)
       .values({
         title: 'Untitled',
-        // Initialize with an empty array for BlockNote (valid JSON) rather than empty string
         content: [],
       })
-      // Pass the column you want to return here
       .returning({ id: notes.id });
 
     return note;
@@ -30,6 +30,11 @@ export class AppService {
   }
 
   async deleteNote(id: string) {
+    const note = await this.getNote(id);
+    if (note?.bannerUrl?.startsWith('/uploads/')) {
+      const filename = note.bannerUrl.replace('/uploads/', '');
+      this.deleteFile(filename);
+    }
     await this.db.delete(notes).where(eq(notes.id, id)).execute();
   }
 
@@ -43,5 +48,23 @@ export class AppService {
     return this.db.query.notes.findMany({
       orderBy: [desc(notes.updatedAt)],
     });
+  }
+
+  deleteFile(filename: string) {
+    try {
+      const safeFilename = path.basename(filename);
+      const filePath = path.join(process.cwd(), 'uploads', safeFilename);
+
+      console.log('Deleting:', filePath);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log('Deleted successfully');
+      } else {
+        console.warn('File not found');
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
   }
 }

@@ -58,4 +58,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # SQLite runtime files
 *.db-wal
 *.db-shm
-*.db
+sqlite.db
+
+/uploads/*
+!/uploads/.gitkeep

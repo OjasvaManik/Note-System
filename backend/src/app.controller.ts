@@ -6,10 +6,15 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { InferInsertModel } from 'drizzle-orm';
 import { notes } from './db/schema';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller()
 export class AppController {
@@ -20,18 +25,14 @@ export class AppController {
     return this.appService.createNote();
   }
 
-  // Use PATCH for updates (standard convention), though POST works too
   @Patch('/:id')
   updateNote(
     @Param('id') id: string,
-    // CRITICAL FIX: Add @Body() to read the JSON data
     @Body() note: Partial<InferInsertModel<typeof notes>>,
   ) {
-    // FIX: Use the 'id' from the URL, not from the body
     return this.appService.updateNote(id, note);
   }
 
-  // Use DELETE for deletions
   @Delete('/:id')
   deleteNote(@Param('id') id: string) {
     return this.appService.deleteNote(id);
@@ -45,5 +46,29 @@ export class AppController {
   @Get('/:id')
   getNote(@Param('id') id: string) {
     return this.appService.getNote(id);
+  }
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return { url: `/uploads/${file.filename}` };
+  }
+
+  @Delete('upload/:filename')
+  deleteUploadedFile(@Param('filename') filename: string) {
+    console.log(filename);
+    return this.appService.deleteFile(filename);
   }
 }

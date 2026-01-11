@@ -8,7 +8,7 @@ import "@blocknote/shadcn/style.css";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { debounce } from "lodash";
-import { Block, PartialBlock } from "@blocknote/core"; // 1. Import Types
+import { Block, PartialBlock } from "@blocknote/core";
 import * as Badge from "@/components/ui/badge";
 import * as Button from "@/components/ui/button";
 import * as Card from "@/components/ui/card";
@@ -22,7 +22,6 @@ import * as Toggle from "@/components/ui/toggle";
 import * as Tooltip from "@/components/ui/tooltip";
 
 interface EditorProps {
-  // 2. Initial content allows 'partial' blocks (easier for loading DB data)
   initialContent?: PartialBlock[];
   id: string;
 }
@@ -35,9 +34,8 @@ const MyEditor = ( { initialContent, id }: EditorProps ) => {
     initialContent: initialContent,
   } );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const saveContent = useCallback(
-    // 3. The editor document is always a full Block[]
+    // eslint-disable-next-line react-hooks/use-memo
     debounce( async ( json: Block[] ) => {
       await fetch( `${ API_URL }/${ id }`, {
         method: 'PATCH',

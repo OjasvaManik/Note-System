@@ -22,7 +22,6 @@ export default function RootLayout( {
   return (
     <html lang="en" suppressHydrationWarning={ true }>
     <body
-      // Applying righteous.className forces the font globally
       className={ `${ righteous.className } antialiased py-3 px-2 lg:w-4xl mx-auto` }
     >
     <ThemeProvider

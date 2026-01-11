@@ -7,7 +7,11 @@ import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { debounce } from "lodash";
 import { PartialBlock } from "@blocknote/core";
-import CreateNote from "@/components/create-note"; // 1. Import Type
+import CreateNote from "@/components/create-note";
+import EmojiPickerComponent from "@/components/emoji-picker-component";
+import BannerComponent from "@/components/banner-component";
+import { EmojiMartEmoji } from "@/types/types";
+import { Note } from "@/types/note";
 
 const NotePage = () => {
   const params = useParams();
@@ -16,7 +20,8 @@ const NotePage = () => {
 
   const [ isLoading, setIsLoading ] = useState( true );
   const [ title, setTitle ] = useState( '' );
-  // 2. State is strictly typed now
+  const [ emoji, setEmoji ] = useState<string | null>( null );
+  const [ bannerUrl, setBannerUrl ] = useState<string | null>( null );
   const [ initialContent, setInitialContent ] = useState<PartialBlock[] | undefined>( undefined );
 
   useEffect( () => {
@@ -24,16 +29,30 @@ const NotePage = () => {
       try {
         const res = await fetch( `${ API_URL }/${ id }` );
         if ( !res.ok ) throw new Error( "Note not found" );
-        const data = await res.json();
+
+        const data = await res.json() as Note;
 
         setTitle( data.title || '' );
+        setEmoji( data.emoji || null );
+        setBannerUrl( data.bannerUrl || null );
 
-        // 3. Check if content exists and cast it
-        if ( data.content && Array.isArray( data.content ) && data.content.length > 0 ) {
-          setInitialContent( data.content as PartialBlock[] );
+        if ( data.content ) {
+          if ( Array.isArray( data.content ) && data.content.length > 0 ) {
+            setInitialContent( data.content as unknown as PartialBlock[] );
+          } else if ( typeof data.content === 'string' ) {
+            try {
+              const parsed = JSON.parse( data.content );
+              if ( Array.isArray( parsed ) && parsed.length > 0 ) {
+                setInitialContent( parsed as PartialBlock[] );
+              }
+            } catch ( e ) {
+              console.error( "Failed to parse content", e );
+            }
+          }
         } else {
           setInitialContent( undefined );
         }
+
       } catch ( error ) {
         console.error( error );
       } finally {
@@ -44,22 +63,39 @@ const NotePage = () => {
     if ( id ) fetchNote();
   }, [ id, API_URL ] );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const saveTitle = useCallback(
-    debounce( async ( newTitle: string ) => {
+  const saveField = useCallback(
+    debounce( async ( field: keyof Note, value: string | null ) => {
       await fetch( `${ API_URL }/${ id }`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify( { title: newTitle } ),
+        body: JSON.stringify( { [ field ]: value } ),
       } );
     }, 1000 ),
     [ id, API_URL ]
   );
 
+  const saveFieldImmediate = async ( field: keyof Note, value: string | null ) => {
+    await fetch( `${ API_URL }/${ id }`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify( { [ field ]: value } ),
+    } );
+  }
+
   const handleTitleChange = ( e: React.ChangeEvent<HTMLInputElement> ) => {
     const val = e.target.value;
     setTitle( val );
-    saveTitle( val );
+    saveField( 'title', val );
+  }
+
+  const handleEmojiSelect = ( selected: EmojiMartEmoji ) => {
+    setEmoji( selected.native );
+    saveFieldImmediate( 'emoji', selected.native );
+  }
+
+  const handleBannerChange = ( url: string | null ) => {
+    setBannerUrl( url );
+    saveFieldImmediate( 'bannerUrl', url );
   }
 
   if ( isLoading ) {
@@ -71,18 +107,30 @@ const NotePage = () => {
   }
 
   return (
-    <div>
-      <CreateNote/>
-      <div className="flex flex-col space-y-4">
-        <Input
-          type='text'
-          value={ title }
-          onChange={ handleTitleChange }
-          placeholder='Untitled'
-          className="h-20 text-5xl lg:text-5xl font-semibold"
-        />
-        <div className="-ml-4">
-          <MyEditor initialContent={ initialContent } id={ id }/>
+    <div className="h-full w-full">
+
+      <div className="max-w-4xl mx-auto">
+        <CreateNote/>
+        <BannerComponent url={ bannerUrl } onChange={ handleBannerChange }/>
+
+        <div className="flex flex-col">
+          <div className={ 'flex items-center gap-x-1' }>
+            <EmojiPickerComponent
+              currentEmoji={ emoji }
+              onSelect={ handleEmojiSelect }
+            />
+            <Input
+              type='text'
+              value={ title }
+              onChange={ handleTitleChange }
+              placeholder='Untitled'
+              className="h-20 text-5xl lg:text-5xl font-bold border-0 bg-transparent dark:bg-transparent shadow-none"
+            />
+          </div>
+
+          <div className="-ml-4">
+            <MyEditor initialContent={ initialContent } id={ id }/>
+          </div>
         </div>
       </div>
     </div>

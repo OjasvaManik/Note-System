@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   reactStrictMode: false,
-  basePath: "/note-system",
+  // basePath: "/note-system",
 };
 
 export default nextConfig;

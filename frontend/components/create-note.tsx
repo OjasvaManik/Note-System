@@ -32,7 +32,6 @@ const CreateNote = () => {
 
   return (
     <div className={ 'flex justify-end py-2 space-x-2' }>
-      {/* Only show the Back button if NOT on the home page */ }
       { pathname !== '/' && (
         <Button variant="ghost" size="icon" className="rounded-full" asChild>
           <Link href="/">

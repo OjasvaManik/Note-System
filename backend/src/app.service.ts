@@ -4,8 +4,8 @@ import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import * as schema from './db/schema';
 import { notes } from './db/schema';
 import { desc, eq, InferInsertModel } from 'drizzle-orm';
-import * as fs from 'fs';
 import * as path from 'path';
+import * as fs from 'fs/promises';
 
 @Injectable()
 export class AppService {
@@ -32,8 +32,11 @@ export class AppService {
   async deleteNote(id: string) {
     const note = await this.getNote(id);
     if (note?.bannerUrl?.startsWith('/uploads/')) {
-      const filename = note.bannerUrl.replace('/uploads/', '');
-      this.deleteFile(filename);
+      try {
+        await this.deleteFileByPath(note.bannerUrl);
+      } catch (err) {
+        console.error('Failed to delete banner file:', err);
+      }
     }
     await this.db.delete(notes).where(eq(notes.id, id)).execute();
   }
@@ -50,21 +53,14 @@ export class AppService {
     });
   }
 
-  deleteFile(filename: string) {
-    try {
-      const safeFilename = path.basename(filename);
-      const filePath = path.join(process.cwd(), 'uploads', safeFilename);
-
-      console.log('Deleting:', filePath);
-
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log('Deleted successfully');
-      } else {
-        console.warn('File not found');
-      }
-    } catch (error) {
-      console.error('Delete failed:', error);
+  async deleteFileByPath(filePath: string) {
+    if (!filePath.startsWith('/uploads/')) {
+      throw new Error('Invalid file path');
     }
+    const relativePath = filePath.replace(/^\/+/, '');
+    const absolutePath = path.join(process.cwd(), relativePath);
+    console.log('Deleting:', absolutePath);
+    await fs.unlink(absolutePath);
+    return { success: true };
   }
 }

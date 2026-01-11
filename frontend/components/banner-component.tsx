@@ -55,13 +55,12 @@ export default function BannerComponent( { url, onChange }: BannerProps ) {
   const handleRemove = async () => {
     if ( url && url.startsWith( '/uploads/' ) ) {
       try {
-        const filename = url.split( '/' ).pop();
+        await fetch( `${ API_URL }/upload/file`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify( { path: url } ),
+        } );
 
-        if ( filename ) {
-          await fetch( `${ API_URL }/upload/${ filename }`, {
-            method: 'DELETE',
-          } );
-        }
         toast.success( 'Banner removed successfully!' )
       } catch ( error ) {
         toast.error( 'Failed to remove banner' );
@@ -113,7 +112,7 @@ export default function BannerComponent( { url, onChange }: BannerProps ) {
                     Embed Link
                   </Button>
                 </TabsContent>
-                
+
                 <TabsContent value="upload" className="space-y-2">
                   <div className="flex items-center justify-center w-full">
                     <label
@@ -131,7 +130,7 @@ export default function BannerComponent( { url, onChange }: BannerProps ) {
                       <Input
                         type="file"
                         className="hidden"
-                        accept="image/*"
+                        accept="image/*,video/*"
                         onChange={ handleFileUpload }
                         disabled={ isUploading }
                       />

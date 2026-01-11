@@ -13,8 +13,11 @@ import { AppService } from './app.service';
 import { InferInsertModel } from 'drizzle-orm';
 import { notes } from './db/schema';
 import { diskStorage } from 'multer';
+import * as path from 'path';
 import { extname } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as fs from 'fs/promises';
+import { videoToGif } from './ffmpeg.util';
 
 @Controller()
 export class AppController {
@@ -52,23 +55,47 @@ export class AppController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        destination: './tmp',
+        filename: (req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${unique}${extname(file.originalname)}`);
         },
       }),
+      fileFilter: (req, file, cb) => {
+        if (
+          file.mimetype.startsWith('image/') ||
+          file.mimetype.startsWith('video/')
+        ) {
+          cb(null, true);
+        } else {
+          cb(new Error('Unsupported file type'), false);
+        }
+      },
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
-    return { url: `/uploads/${file.filename}` };
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    const isVideo = file.mimetype.startsWith('video/');
+    const filename = file.filename;
+
+    if (!isVideo) {
+      const finalPath = path.join('uploads/images', filename);
+      await fs.rename(file.path, finalPath);
+
+      return { url: `/uploads/images/${filename}` };
+    }
+    const gifName = `${path.parse(filename).name}.gif`;
+    const gifPath = path.join('uploads/gifs', gifName);
+
+    await videoToGif(file.path, gifPath);
+
+    await fs.unlink(file.path).catch(() => {});
+    await fs.unlink(`${file.path}.palette.png`).catch(() => {});
+    return { url: `/uploads/gifs/${gifName}` };
   }
 
-  @Delete('upload/:filename')
-  deleteUploadedFile(@Param('filename') filename: string) {
-    console.log(filename);
-    return this.appService.deleteFile(filename);
+  @Delete('upload/file')
+  deleteUploadedFile(@Body('path') filePath: string) {
+    console.log('Deleting:', filePath);
+    return this.appService.deleteFileByPath(filePath);
   }
 }

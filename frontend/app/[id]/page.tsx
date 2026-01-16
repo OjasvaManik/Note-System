@@ -9,9 +9,9 @@ import { debounce } from "lodash";
 import { PartialBlock } from "@blocknote/core";
 import CreateNote from "@/components/create-note";
 import EmojiPickerComponent from "@/components/emoji-picker-component";
-import BannerComponent from "@/components/banner-component";
 import { EmojiMartEmoji } from "@/types/types";
 import { Note } from "@/types/note";
+import BannerComponent from "@/components/banner/banner-component";
 
 const NotePage = () => {
   const params = useParams();

@@ -7,6 +7,27 @@ import { desc, eq, InferInsertModel } from 'drizzle-orm';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+export interface UnsplashImage {
+  id: string;
+  urls: {
+    regular: string;
+    small: string;
+  };
+  links: {
+    download_location: string;
+  };
+  user: {
+    name: string;
+    links: {
+      html: string;
+    };
+  };
+}
+
+interface UnsplashSearchResponse {
+  results: UnsplashImage[];
+}
+
 @Injectable()
 export class AppService {
   constructor(
@@ -62,5 +83,43 @@ export class AppService {
     console.log('Deleting:', absolutePath);
     await fs.unlink(absolutePath);
     return { success: true };
+  }
+
+  async searchImages(query: string, page: number): Promise<UnsplashImage[]> {
+    const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+    if (!accessKey) throw new Error('Missing Unsplash API Key');
+
+    try {
+      const params = new URLSearchParams({
+        client_id: accessKey,
+        query: query,
+        page: page.toString(),
+        per_page: '30',
+        orientation: 'landscape',
+      });
+
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?${params}`,
+      );
+      // console.log('Image search response:', res);
+      if (!res.ok) throw new Error(`Unsplash error: ${res.statusText}`);
+
+      const data = (await res.json()) as UnsplashSearchResponse;
+      return data.results;
+    } catch (error) {
+      console.error('Image search failed:', error);
+      return [];
+    }
+  }
+
+  // You should strictly call this when a user selects an image
+  async trackDownload(downloadLocation: string) {
+    const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+    if (!accessKey) return;
+
+    // Unsplash requires hitting this URL with the client_id attached
+    await fetch(`${downloadLocation}&client_id=${accessKey}`).catch(
+      console.error,
+    );
   }
 }

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -23,32 +24,29 @@ import { videoToGif } from './ffmpeg.util';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  // =========================================================
+  // 1. STATIC ROUTES (Must be defined BEFORE dynamic /:id)
+  // =========================================================
+
+  @Get('search-images')
+  searchImages(@Query('q') query: string, @Query('page') page: string) {
+    if (!query) return [];
+    return this.appService.searchImages(query, parseInt(page) || 1);
+  }
+
+  @Post('track-download')
+  trackDownload(@Body('downloadLocation') downloadLocation: string) {
+    return this.appService.trackDownload(downloadLocation);
+  }
+
   @Post('/create-note')
   createNote() {
     return this.appService.createNote();
   }
 
-  @Patch('/:id')
-  updateNote(
-    @Param('id') id: string,
-    @Body() note: Partial<InferInsertModel<typeof notes>>,
-  ) {
-    return this.appService.updateNote(id, note);
-  }
-
-  @Delete('/:id')
-  deleteNote(@Param('id') id: string) {
-    return this.appService.deleteNote(id);
-  }
-
   @Get()
   getNotes() {
     return this.appService.getAll();
-  }
-
-  @Get('/:id')
-  getNote(@Param('id') id: string) {
-    return this.appService.getNote(id);
   }
 
   @Post('upload')
@@ -97,5 +95,27 @@ export class AppController {
   deleteUploadedFile(@Body('path') filePath: string) {
     console.log('Deleting:', filePath);
     return this.appService.deleteFileByPath(filePath);
+  }
+
+  // =========================================================
+  // 2. DYNAMIC ROUTES (Must be defined LAST)
+  // =========================================================
+
+  @Get('/:id')
+  getNote(@Param('id') id: string) {
+    return this.appService.getNote(id);
+  }
+
+  @Patch('/:id')
+  updateNote(
+    @Param('id') id: string,
+    @Body() note: Partial<InferInsertModel<typeof notes>>,
+  ) {
+    return this.appService.updateNote(id, note);
+  }
+
+  @Delete('/:id')
+  deleteNote(@Param('id') id: string) {
+    return this.appService.deleteNote(id);
   }
 }

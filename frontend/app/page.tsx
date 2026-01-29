@@ -1,13 +1,24 @@
-import React from 'react'
-import CreateNote from "@/components/create-note";
-import GetNotes from "@/components/get-notes";
+'use client'
 
-const HomePage = () => {
+import GetNotes from "@/components/get-notes";
+import { NoNotes } from "@/components/no-notes";
+
+export default function Home() {
   return (
-    <div>
-      <CreateNote/>
-      <GetNotes/>
+    // FIXED: Single line string
+    <div
+      className="h-full w-full p-4 overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
+      {/* MOBILE VIEW */ }
+      <div className="lg:hidden h-full">
+        <GetNotes/>
+      </div>
+
+      {/* DESKTOP VIEW */ }
+      <div className="hidden lg:flex h-full flex-col items-center justify-center text-muted-foreground opacity-50">
+        <NoNotes/>
+      </div>
+
     </div>
-  )
+  );
 }
-export default HomePage

@@ -39,8 +39,9 @@ export default function BannerComponent( { url, onChange }: BannerProps ) {
   // 1. View Mode (Banner exists)
   if ( url ) {
     return (
-      <div className="group relative mb-1">
-        <div className="relative h-[35vh] bg-muted group w-screen ml-[50%] -translate-x-1/2">
+      <div className="group relative w-full mb-2">
+        {/* Removed the ml-[50%] hack. Added w-full */ }
+        <div className="relative h-[35vh] w-full bg-muted group overflow-hidden">
           <img
             src={ getImageUrl( url )! }
             alt="Cover"
@@ -61,15 +62,16 @@ export default function BannerComponent( { url, onChange }: BannerProps ) {
 
   // 2. Picker Mode (No banner)
   return (
-    <div className="group relative mb-1">
+    <div className="group relative mb-8 px-8 lg:px-12 pt-8">
       <Popover open={ isOpen } onOpenChange={ setIsOpen }>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2 text-muted-foreground">
+          <Button variant="outline" size="sm"
+                  className="gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ImageIcon className="h-4 w-4"/>
             Add Cover
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-screen lg:w-125 p-0" align="start">
+        <PopoverContent className="w-80 lg:w-[30rem] p-0" align="start">
           <Tabs defaultValue="search" className="w-full">
             <div className="p-3 border-b">
               <TabsList className="grid w-full grid-cols-3">

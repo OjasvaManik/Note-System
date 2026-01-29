@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { righteous } from "@/types/fonts";
 import NavBar from "@/components/nav-bar";
+import GetNotes from "@/components/get-notes";
 
 export const metadata: Metadata = {
   title: "Note System",
@@ -21,17 +22,34 @@ export default function RootLayout( {
 }> ) {
   return (
     <html lang="en" suppressHydrationWarning={ true }>
-    <body
-      className={ `${ righteous.className } antialiased py-3 px-2 lg:w-4xl mx-auto` }
-    >
+    <body className={ `${ righteous.className } antialiased h-screen flex flex-col overflow-hidden` }>
     <ThemeProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
     >
-      <NavBar/>
-      { children }
+      {/* Top Navigation */ }
+      <div className="px-2 pt-3">
+        <NavBar/>
+      </div>
+
+      {/* Main Layout Area */ }
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar: Hidden on mobile, visible on lg+ */ }
+        <aside
+          className="hidden lg:flex w-120 flex-col overflow-y-auto border-r border-accent mb-2 px-3 space-y-4 border-dotted mr-2">
+          <GetNotes/>
+        </aside>
+
+        {/* Content: Takes the rest of the space */ }
+        <main className="flex-1 overflow-y-auto">
+          { children }
+        </main>
+
+      </div>
+
       <Toaster position="bottom-right"/>
     </ThemeProvider>
     </body>

@@ -22,6 +22,10 @@ const CreateNote = () => {
       if ( !res.ok ) throw new Error( 'Failed to create' );
 
       const data = await res.json();
+
+      // Dispatch event to update sidebar
+      window.dispatchEvent( new Event( 'note-updated' ) );
+
       router.push( `/${ data.id }` );
     } catch ( error ) {
       console.error( error );

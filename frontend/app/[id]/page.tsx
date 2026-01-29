@@ -3,19 +3,21 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Input } from "@/components/ui/input";
 import MyEditor from "@/components/my-editor";
-import { useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useParams, usePathname } from "next/navigation";
+import { ArrowLeftIcon, Loader2 } from "lucide-react";
 import { debounce } from "lodash";
 import { PartialBlock } from "@blocknote/core";
-import CreateNote from "@/components/create-note";
 import EmojiPickerComponent from "@/components/emoji-picker-component";
 import { EmojiMartEmoji } from "@/types/types";
 import { Note } from "@/types/note";
 import BannerComponent from "@/components/banner/banner-component";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const NotePage = () => {
   const params = useParams();
   const id = params.id as string;
+  const pathname = usePathname();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082';
 
   const [ isLoading, setIsLoading ] = useState( true );
@@ -70,6 +72,8 @@ const NotePage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify( { [ field ]: value } ),
       } );
+      // 3. Dispatch event after saving (debounced)
+      window.dispatchEvent( new Event( 'note-updated' ) );
     }, 1000 ),
     [ id, API_URL ]
   );
@@ -80,6 +84,8 @@ const NotePage = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify( { [ field ]: value } ),
     } );
+    // 4. Dispatch event after saving (immediate)
+    window.dispatchEvent( new Event( 'note-updated' ) );
   }
 
   const handleTitleChange = ( e: React.ChangeEvent<HTMLInputElement> ) => {
@@ -109,8 +115,7 @@ const NotePage = () => {
   return (
     <div className="h-full w-full">
 
-      <div className="max-w-4xl mx-auto">
-        <CreateNote/>
+      <div className="">
         <BannerComponent url={ bannerUrl } onChange={ handleBannerChange }/>
 
         <div className="flex flex-col">
@@ -132,6 +137,15 @@ const NotePage = () => {
             <MyEditor initialContent={ initialContent } id={ id }/>
           </div>
         </div>
+      </div>
+      <div className="lg:hidden fixed bottom-4 right-4 z-50">
+        { pathname !== '/' && (
+          <Button variant="ghost" size="icon" className="rounded-full" asChild>
+            <Link href="/">
+              <ArrowLeftIcon/>
+            </Link>
+          </Button>
+        ) }
       </div>
     </div>
   )

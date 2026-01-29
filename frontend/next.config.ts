@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: false,
   basePath: "/note-system",
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
